@@ -13,7 +13,7 @@ struct pomodoroApp: App {
 //        WindowGroup {
 //            ContentView()
 //        }
-        MenuBarExtra("my pomodoro", systemImage: "lasso"){
+        MenuBarExtra("my pomodoro", systemImage: "fork.knife"){
             MenuBarContentView()
         }
         

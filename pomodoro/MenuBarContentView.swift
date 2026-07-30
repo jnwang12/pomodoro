@@ -2,7 +2,7 @@
 //  MenuBarContentView.swift
 //  pomodoro
 //
-//  Created by Joy Wang on 7/30/26.
+//  Created by Joy Wang on 7/29/26.
 //
 
 import SwiftUI
@@ -79,20 +79,35 @@ private func twoDigits(_ n: Int) -> String { String(format: "%02d", max(0, min(9
 
 struct MenuBarContentView: View {
     enum TimerSelection: Equatable {
-        case preset(Int)
+        case preset(Int, String)
         case custom
+        
+        var items: [String] {
+            ["chocolatecake", "icecreamcone", "pickle", "swisscheese", "salami", "lollipop", "cherrypie", "sausage", "cupcake", "watermelon"]
+        }
+    
+        var imageName: String {
+            switch self {
+                case .preset(_, let name):
+                    return name
+                case .custom:
+                    return items.randomElement() ?? "chocolatecake"
+            }
+        }
     }
+
     
     let selections: [TimerSelection] = [
-        .preset(20),
-        .preset(25),
-        .preset(30),
-        .preset(45),
-        .preset(50),
-        .preset(90),
+        .preset(20, "apple"),
+        .preset(25, "pear"),
+        .preset(30, "plum"),
+        .preset(45, "strawberry"),
+        .preset(50, "orange"),
+        .preset(90, "leaf"),
         .custom
     ]
     
+
     @State private var selectionIndex: Int = 2 // default 50
     
     @State private var progress: Double = 0.0
@@ -113,6 +128,9 @@ struct MenuBarContentView: View {
     // Variables to remember the original custom time before counting down
     @State private var savedCustomMinutes: String = "25"
     @State private var savedCustomSeconds: String = "00"
+    
+    // Tracks if the timer has reached 0
+    @State private var isTimerFinished: Bool = false
 
     var body: some View {
         let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -121,8 +139,14 @@ struct MenuBarContentView: View {
             Color.white
                 .ignoresSafeArea()
             VStack(spacing: 12){
-                Text("sys tasks")
+                Text("a very hungry caterpillar!")
                     .foregroundStyle(Color(hex:"#06402B") ?? Color.white)
+                
+                // Image toggles based on whether timer finished
+                Image(isTimerFinished ? "butterfly" : "caterpillar")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(height: 60)
 
                 HStack(alignment: .center, spacing: 16) {
                     // Left Chevron
@@ -172,8 +196,9 @@ struct MenuBarContentView: View {
                     // Reset progress and duration when changing modes while paused
                     progress = 0
                     duration = 0
+                    isTimerFinished = false
                     
-                    if case let .preset(minutes) = selections[new] {
+                    if case let .preset(minutes, _) = selections[new] {
                         inputMinutes = twoDigits(minutes)
                         inputSeconds = "00"
                         syncDigitsFromStrings()
@@ -190,7 +215,7 @@ struct MenuBarContentView: View {
                 .onAppear { syncDigitsFromStrings() }
 
                 //Progress Indicator
-                Image("apple")
+                Image(selections[selectionIndex].imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(height: 80) // Set a fixed height for the menu bar item
@@ -201,7 +226,7 @@ struct MenuBarContentView: View {
                     }
 
                 HStack {
-                    Button(isRunning ? "Stop" : "Start") {
+                    Button(isRunning ? "stop" : "start") {
                         if isRunning {
                             // Stop: store remaining by setting endDate to nil but keep storedEndDate cleared
                             isRunning = false
@@ -213,18 +238,20 @@ struct MenuBarContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
 
-                    Button("Reset") {
+                    Button("reset") {
                         resetTimer()
                     }
                     .buttonStyle(.bordered)
+                    .padding()
                 }
 
                 if let end = endDate, isRunning {
-                    Text("Ends at \(end.formatted(date: .omitted, time: .standard))")
+                    Text("ends at \(end.formatted(date: .omitted, time: .standard))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
+            .padding(.top, 20)
         }
         .onReceive(timer) { now in
             tick = now
@@ -278,6 +305,9 @@ struct MenuBarContentView: View {
         let remainingToRun = mins * 60 + secs
         guard remainingToRun > 0 else { return }
         
+        // Reset the image logic when starting
+        isTimerFinished = false
+        
         // Only override 'duration' if starting fresh, to ensure the image
         // doesn't reset its fractional size on stop/start
         if duration == 0 || progress == 0 {
@@ -303,9 +333,10 @@ struct MenuBarContentView: View {
         endDate = nil
         duration = 0
         storedEndDate = 0
+        isTimerFinished = false // Reverts image to caterpillar
         
         // Restore time back to preset OR saved custom time
-        if case let .preset(minutes) = selections[selectionIndex] {
+        if case let .preset(minutes, _) = selections[selectionIndex] {
             inputMinutes = twoDigits(minutes)
             inputSeconds = "00"
         } else if case .custom = selections[selectionIndex] {
@@ -327,6 +358,7 @@ struct MenuBarContentView: View {
             // Resume
             endDate = target
             isRunning = true
+            isTimerFinished = false // Resume means it hasn't finished yet
             // If we don't know original duration, infer from remaining if possible
             if duration == 0 {
                 let mins = Double(inputMinutes) ?? 0
@@ -357,6 +389,7 @@ struct MenuBarContentView: View {
             isRunning = false
             endDate = nil
             storedEndDate = 0
+            isTimerFinished = true
             
             // Set digits to 00:00 when timer is done
             inputMinutes = "00"
