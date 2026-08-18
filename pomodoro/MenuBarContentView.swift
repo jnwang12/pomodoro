@@ -173,7 +173,9 @@ struct MenuBarContentView: View {
                             DigitStepper(title: "S", value: $sTens, range: 0...5, isEnabled: !isRunning)
                             DigitStepper(title: nil, value: $sOnes, range: 0...9, isEnabled: !isRunning)
                         }
+                        .font(.system(size: 32, weight: .medium, design: .monospaced))
                         .frame(minWidth: 120)
+                        
                     } else {
                         Text("\(inputMinutes):\(inputSeconds)")
                             .font(.system(size: 32, weight: .medium, design: .monospaced))
@@ -226,7 +228,7 @@ struct MenuBarContentView: View {
                     }
 
                 HStack {
-                    Button(isRunning ? "stop" : "start") {
+                    Button(isRunning ? "Stop" : "Start") {
                         if isRunning {
                             // Stop: store remaining by setting endDate to nil but keep storedEndDate cleared
                             isRunning = false
@@ -238,7 +240,7 @@ struct MenuBarContentView: View {
                     }
                     .buttonStyle(.borderedProminent)
 
-                    Button("reset") {
+                    Button("Reset") {
                         resetTimer()
                     }
                     .buttonStyle(.bordered)
@@ -246,7 +248,7 @@ struct MenuBarContentView: View {
                 }
 
                 if let end = endDate, isRunning {
-                    Text("ends at \(end.formatted(date: .omitted, time: .standard))")
+                    Text("Ends at \(end.formatted(date: .omitted, time: .standard))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
